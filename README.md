@@ -37,3 +37,22 @@ Execute `.\uninstall.ps1` no PowerShell e remova a extensão em `edge://extensio
 - `extension/`: extensão Manifest V3 do Edge.
 - `native-host/`: código-fonte C# do host Native Messaging e da conexão IPC com o Discord.
 - `install.ps1` / `uninstall.ps1`: registro e remoção do host no Windows.
+
+## Criar uma release do host pelo GitHub Actions
+
+1. Envie os arquivos atualizados para o GitHub.
+2. No repositório, abra **Actions** e selecione **Build Host Installer Release**.
+3. Clique em **Run workflow** e informe uma versão nova, por exemplo `1.0.3` (sem `v`).
+4. O workflow compila o host C# para Windows x64, cria `YTMusicDiscord-Host-Setup.exe` com Inno Setup e anexa o instalador a uma GitHub Release.
+
+A extensão do Edge continua sendo enviada e atualizada pelo Partner Center. O instalador da Release contém apenas o host local e a configuração Native Messaging.
+
+## Instalação da versão pública
+
+Depois que a extensão for aprovada e estiver disponível na loja do Edge:
+
+1. Instale a extensão pela Microsoft Edge Add-ons.
+2. Baixe e execute o [instalador do host](https://github.com/ADJPXX/YTMusicDiscord/releases/latest/download/YTMusicDiscord-Host-Setup.exe).
+3. Mantenha o aplicativo Discord para Windows aberto e reproduza uma faixa no YouTube Music.
+
+O instalador do host é separado da extensão e não exige o .NET SDK no computador de quem instala.

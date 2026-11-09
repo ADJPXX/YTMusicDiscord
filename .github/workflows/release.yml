@@ -1,45 +1,73 @@
-name: Build Release
+name: Build Host Installer Release
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: Release version, for example 1.0.3
+        required: true
+        default: 1.0.3
+        type: string
 
 permissions:
   contents: write
 
 jobs:
-  build:
+  build-and-release:
     runs-on: windows-latest
-
     steps:
-
-      - name: Clonar repositório
+      - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Instalar .NET
+      - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
 
-      - name: Restaurar pacotes
-        run: dotnet restore
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup --yes --no-progress
 
-      - name: Publicar projeto
+      - name: Validate release version
+        shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
         run: |
-          dotnet publish ./native-host/NativeHost.csproj `
-            -c Release `
-            -r win-x64 `
-            --self-contained true `
-            /p:PublishSingleFile=true `
-            /p:IncludeNativeLibrariesForSelfExtract=true `
-            /p:EnableCompressionInSingleFile=false `
-            /p:PublishTrimmed=false `
-            -o publish
+          if ($env:RELEASE_VERSION -notmatch '^\d+\.\d+\.\d+$') {
+            throw 'Enter a version such as 1.0.3, without a leading v.'
+          }
 
-      - name: Criar Release
+      - name: Publish self-contained C# host
+        shell: pwsh
+        run: |
+          dotnet publish .\native-host\NativeHost.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=false -p:PublishTrimmed=false -o .\native-host\publish
+          if ($LASTEXITCODE -ne 0) { throw 'dotnet publish failed.' }
+
+      - name: Compile Windows installer
+        shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          $programFilesX86 = [Environment]::GetEnvironmentVariable('ProgramFiles(x86)')
+          $iscc = Get-ChildItem -Path $programFilesX86 -Filter ISCC.exe -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+          if (-not $iscc) { throw 'Inno Setup compiler ISCC.exe was not found.' }
+
+          Push-Location .\installer
+          try {
+            & $iscc "/DAppVersion=$env:RELEASE_VERSION" .\setup.iss
+            if ($LASTEXITCODE -ne 0) { throw 'Inno Setup compilation failed.' }
+          } finally {
+            Pop-Location
+          }
+
+          if (-not (Test-Path -LiteralPath .\release\YTMusicDiscord-Host-Setup.exe)) {
+            throw 'The installer output was not created.'
+          }
+
+      - name: Create GitHub Release and upload installer
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: build-${{ github.run_number }}
-          name: Build ${{ github.run_number }}
+          tag_name: ${{ inputs.version }}
+          name: YouTube Music para Discord ${{ inputs.version }}
           generate_release_notes: true
-          files: |
-            publish/YTMusicDiscord.exe
+          files: release/YTMusicDiscord-Host-Setup.exe
