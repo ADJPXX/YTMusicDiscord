@@ -1,0 +1,10 @@
+{
+  "name": "org.codex.ytmusic_discord",
+  "description": "Host do YouTube Music para Discord",
+  "path": "YTMusicDiscordHostV3.exe",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://bncpjpihhfpgngdbaiadlamggpkingmf/",
+    "chrome-extension://ldcokndlibdcaceigklncgfhajnneiml/"
+  ]
+}
