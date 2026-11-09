@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube Music para Discord",
+  "version": "1.0.2",
+  "description": "Mostra no Discord a música tocando no YouTube Music.",
+  "permissions": ["nativeMessaging"],
+  "background": {
+    "service_worker": "service-worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://music.youtube.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle",
+      "world": "ISOLATED"
+    }
+  ],
+  "action": {
+    "default_title": "YouTube Music para Discord"
+  }
+}
